@@ -16,7 +16,7 @@ public class POS extends JFrame {
 
     private JTable inventoryTable;
     private JTable cartTable;
-    private JTextField receiptTextArea;
+    private JTextArea receiptTextArea;
 
     class ButtonRenderer extends JButton implements TableCellRenderer {
         public ButtonRenderer() {
@@ -141,6 +141,30 @@ public class POS extends JFrame {
         JButton addProductButton = new JButton("Add Product");
         JButton editProductButton = new JButton("Edit Product");
         JButton deleteProductButton = new JButton("Delete Product");
+
+        //Create receipt text area
+        receiptTextArea = new JTextArea();
+        receiptTextArea.setEditable(false);
+        JScrollPane receiptScrollPane = new JScrollPane(receiptTextArea);
+
+        //Set the preferred size
+        inventoryScrollPane.setPreferredSize(new Dimension(400,400));
+        cartScrollPane.setPreferredSize(new Dimension(300, 400));
+        receiptScrollPane.setPreferredSize(new Dimension(250, 400));
+
+        //Add panel to main frame
+        getContentPane().setLayout(new BorderLayout());
+        getContentPane().add(inventoryPanel, BorderLayout.WEST);
+        getContentPane().add(cartPanel, BorderLayout.CENTER);
+        getContentPane().add(receiptPanel, BorderLayout.EAST);
+
+        //All components panel
+        inventoryPanel.add(inventoryScrollPane, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(checkoutButton);
+        buttonPanel.add(editItemButton);
+        buttonPanel.add(deleteItemButton);
 
 
     }
