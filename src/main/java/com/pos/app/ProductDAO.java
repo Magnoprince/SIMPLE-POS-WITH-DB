@@ -11,7 +11,7 @@ import java.util.List;
 public class ProductDAO extends DbConnection{
     List<Product> products = new ArrayList<>();
 
-    public void addProduct(Product product){
+    public boolean addProduct(Product product){
         String query = "INSERT INTO inventory(product_name, price, stock) VALUES (?, ?, ?)";
         try{
             connectToDatabase();
@@ -26,6 +26,7 @@ public class ProductDAO extends DbConnection{
             JOptionPane.showMessageDialog(this, "Error adding product!", "Error",
                     JOptionPane.ERROR_MESSAGE);
         }
+        return false;
     }
 
     public void  updateProduct(Product product){

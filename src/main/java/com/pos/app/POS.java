@@ -4,6 +4,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -166,11 +167,67 @@ public class POS extends JFrame {
         buttonPanel.add(editItemButton);
         buttonPanel.add(deleteItemButton);
 
+        //Create a panel for buttons Flowlayout (Horizontal Layout)
+        JPanel inventoryButtonPanel = new JPanel();
+        inventoryButtonPanel.add(checkoutButton);
+        inventoryButtonPanel.add(editItemButton);
+        inventoryButtonPanel.add(deleteItemButton);
 
+        inventoryPanel.add(inventoryButtonPanel, BorderLayout.SOUTH);
+        cartPanel.add(cartScrollPane, BorderLayout.CENTER);
+        cartPanel.add(buttonPanel, BorderLayout.SOUTH);
+        receiptPanel.add(receiptScrollPane, BorderLayout.CENTER);
+
+        //Add an action listener
+        deleteItemButton.addActionListener(e -> deleCartItem());
+        editItemButton.addActionListener(e -> editCart());
+        checkoutButton.addActionListener(e -> {
+            try{
+                checkout();
+            }catch(SQLException ex){
+                throw new RuntimeException(ex);
+            }
+        });
+        addProductButton.addActionListener(e -> addProduct());
+        editProductButton.addActionListener(e -> editProduct());
+        deleteProductButton.addActionListener(e -> deleteProduct());
+
+        //Load inventory
+        loadInventoryData();
+
+        if(inventory.isEmpty()){
+            loadInventoryData();
+        }
     }
 
-    private void addToCart(JButton button) {
+    private void addProduct(JButton button) {
+        JTextField nameField = new JTextField();
+        JTextField priceField = new JTextField();
+        JTextField stocksField = new JTextField();
+
+        Object[] inputFields = {"Name: ", nameField,
+                "Price: ", priceField,
+                "Stocks: ", stocksField};
+
+        int option  = JOptionPane.showConfirmDialog(this, inputFields, "Add Product", JOptionPane.OK_CANCEL_OPTION);
+        if(option == JOptionPane.OK_OPTION){
+            try{
+                String name = nameField.getText();
+                double price = Double.parseDouble(priceField.getText());
+                int stock = Integer.parseInt(stocksField.getText());
+
+                Product product = new Product(name, price, stock);
+                if(productDAO.addProduct(product)){
+                    inventory.add(product);
+                    loadInventoryData();
+
+                }
+            }catch(NumberFormatException e){
+
+            }
+        }
     }
+
 
 
 
