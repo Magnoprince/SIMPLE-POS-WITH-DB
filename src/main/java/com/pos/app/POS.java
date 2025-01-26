@@ -200,7 +200,7 @@ public class POS extends JFrame {
         }
     }
 
-    private void addProduct(JButton button) {
+    private void addProduct() {
         JTextField nameField = new JTextField();
         JTextField priceField = new JTextField();
         JTextField stocksField = new JTextField();
@@ -220,16 +220,61 @@ public class POS extends JFrame {
                 if(productDAO.addProduct(product)){
                     inventory.add(product);
                     loadInventoryData();
-
+                    updateInventoryTable();
+                }else{
+                    JOptionPane.showMessageDialog(this, "Failed to add product in the database.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
+                JOptionPane.showMessageDialog(this, "Product successfully added!");
             }catch(NumberFormatException e){
-
+                JOptionPane.showMessageDialog(this, "Invalid input. Please enter the valid value", "Input Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
 
+    private void editProduct(){
+        int selectedRow = inventoryTable.getSelectedRow();
+        if(selectedRow == -1){
+            JOptionPane.showMessageDialog(this, "Please select a product to edit.", "Selection Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        Product selectedproduct = inventory.get(selectedRow);
+        JTextField nameField = new JTextField(selectedproduct.getName());
+        JTextField priceField = new JTextField(String.valueOf(selectedproduct.getPrice()));
+        JTextField stocksField = new JTextField(String.valueOf(selectedproduct.getStock()));
+        Object[] inputFields =  {"Name: " , nameField, "Price: ", priceField, "Stocks: ", stocksField};
 
+        int option = JOptionPane.showConfirmDialog(this, inputFields, "Edit Product", JOptionPane.OK_CANCEL_OPTION);
+        if(option == JOptionPane.OK_OPTION){
+            try{
+                String newName = nameField.getText();
+                double newPrice = Double.parseDouble(priceField.getText());
+                int newStocks = Integer.parseInt(stocksField.getText());
 
+                selectedproduct.setName(newName);
+                selectedproduct.setPrice(newPrice);
+                selectedproduct.setStock(newStocks);
+
+                if(productDAO.updateProduct(selectedproduct)){
+                    updateInventoryTable();
+                    loadInventoryData();
+                    JOptionPane.showMessageDialog(this, "Product successfully updated.");
+                }else{
+                    JOptionPane.showMessageDialog(this, "Failed to update product.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }catch (NumberFormatException e){
+                JOptionPane.showMessageDialog(this, "Invalid input. Please enter the valid values", "Input Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    public void updateInventoryTable(){
+
+        inventoryTableModel.setRowCount(0);
+        for (Product product : inventory){
+            Object[] rowData = {product.getName(), product.getPrice(), product.getStock()};
+            inventoryTableModel.addRow(rowData);
+        }
+    }
 
     public void loadInventoryData(){
     }

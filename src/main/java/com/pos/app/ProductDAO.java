@@ -29,7 +29,7 @@ public class ProductDAO extends DbConnection{
         return false;
     }
 
-    public void  updateProduct(Product product){
+    public boolean updateProduct(Product product){
         String query = "UPDATE inventory SET  price = ?, stock = ? WHERE product_name";
         try{
             connectToDatabase();
@@ -42,6 +42,7 @@ public class ProductDAO extends DbConnection{
             JOptionPane.showMessageDialog(this, "Error updating product!", "Error",
                     JOptionPane.ERROR_MESSAGE);
         }
+        return false;
     }
 
     public void deleteProduct(Product product){
@@ -74,8 +75,6 @@ public class ProductDAO extends DbConnection{
                     JOptionPane.ERROR_MESSAGE);
 
         }
-
         return products;
-
     }
 }
