@@ -45,7 +45,7 @@ public class ProductDAO extends DbConnection{
         return false;
     }
 
-    public void deleteProduct(Product product){
+    public boolean deleteProduct(Product product){
         String query =  "DELETE FROM inventory WHERE product_name = ?";
         try {
             connectToDatabase();
@@ -56,6 +56,7 @@ public class ProductDAO extends DbConnection{
             JOptionPane.showMessageDialog(this, "Error deleting product!", "Error",
                     JOptionPane.ERROR_MESSAGE);
         }
+        return false;
     }
 
     public List<Product> loadData() {

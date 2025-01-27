@@ -179,7 +179,7 @@ public class POS extends JFrame {
         receiptPanel.add(receiptScrollPane, BorderLayout.CENTER);
 
         //Add an action listener
-        deleteItemButton.addActionListener(e -> deleCartItem());
+        deleteItemButton.addActionListener(e -> deleteCartItem());
         editItemButton.addActionListener(e -> editCart());
         checkoutButton.addActionListener(e -> {
             try{
@@ -264,6 +264,96 @@ public class POS extends JFrame {
             }catch (NumberFormatException e){
                 JOptionPane.showMessageDialog(this, "Invalid input. Please enter the valid values", "Input Error", JOptionPane.ERROR_MESSAGE);
             }
+        }
+    }
+
+    private void deleteProduct(){
+        int selectedRow = inventoryTable.getSelectedRow();
+        if(selectedRow == -1){
+            JOptionPane.showMessageDialog(this, "Please select a product to delete.", "Selection Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        int option = JOptionPane.showConfirmDialog(this, "Are you sure, you want to delete the selected product?", "Delete Product",
+                JOptionPane.YES_NO_OPTION);
+        if(option == JOptionPane.YES_OPTION){
+            //Get the product from the selected row
+            Product selectedProduct = inventory.get(selectedRow);
+            if(productDAO.deleteProduct(selectedProduct)){
+                inventory.remove(selectedRow);
+                updateInventoryTable();
+                JOptionPane.showMessageDialog(this, "Product successfully deleted.");
+            }else{
+                JOptionPane.showMessageDialog(this, "Failed to delete the product.", "Deleting Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void deleteCartItem(){
+        int selectedRow = cartTable.getSelectedRow();
+        if(selectedRow == -1){
+            JOptionPane.showMessageDialog(this, "Please select a product to delete", "Selected Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        //Get the name of product to delete
+        String nameToDelete = (String) cartTableModel.getValueAt(selectedRow, 0);
+
+        //Find the corresponding product in the cart list and remove it.
+        Product productToRemove = null;
+        for(Product cartProduct : cart){
+            if(cartProduct.getName().equals(nameToDelete)){
+                productToRemove = cartProduct;
+                break;
+            }
+        }
+        if(productToRemove != null){
+            cart.remove(productToRemove);
+            cartTableModel.removeRow(selectedRow);
+            JOptionPane.showMessageDialog(this, "Product deleted from the cart successfully",
+                    "Delete Item", JOptionPane.INFORMATION_MESSAGE);
+        }else {
+            JOptionPane.showMessageDialog(this, "Product not found in the cart", "Deleted Item.", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void editCart(){
+        int selectedRow = cartTable.getSelectedRow();
+        if(selectedRow == -1){
+            JOptionPane.showMessageDialog(this, "Please select product to edit.", "Selection Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        //Get the current value from the cart table
+        String name = (String) cartTableModel.getValueAt(selectedRow, 0);
+        int currentQuantity = (int) cartTableModel.getValueAt(selectedRow, 1);
+
+        //Prompt user for quantity
+        String newQuantityStr = JOptionPane.showInputDialog(this, "Enter the quantity: ", currentQuantity);
+        if(newQuantityStr == null || newQuantityStr.isEmpty()){
+            return;
+        }
+        try{
+            int newQuantity = Integer.parseInt(newQuantityStr);
+            if(newQuantity <= 0){
+                JOptionPane.showMessageDialog(this, "Quantity must be greater than zero.",
+                        "Input Error", JOptionPane.ERROR_MESSAGE);
+                return; //User cancelled or entering the empty input
+            }
+            //Update cart list with new quantity
+            Product productToUpdate = null;
+            for(Product cartProduct : cart){
+                if(cartProduct.getName().equals(name)){
+                    productToUpdate = cartProduct;
+                    break;
+                }
+            }
+            if(productToUpdate != null){
+                productToUpdate.setStock(newQuantity);
+            }
+            //Update cart table with new quantity
+            cartTableModel.setValueAt(newQuantity, selectedRow, 2);
+        }catch (NumberFormatException e){
+            JOptionPane.showMessageDialog(this, "Invalid input of quantity. Please enter a number: ", "Input Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
