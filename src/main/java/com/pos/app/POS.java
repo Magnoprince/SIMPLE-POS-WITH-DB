@@ -5,6 +5,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -181,13 +182,8 @@ public class POS extends JFrame {
         //Add an action listener
         deleteItemButton.addActionListener(e -> deleteCartItem());
         editItemButton.addActionListener(e -> editCart());
-        checkoutButton.addActionListener(e -> {
-            try{
-                checkout();
-            }catch(SQLException ex){
-                throw new RuntimeException(ex);
-            }
-        });
+        checkoutButton.addActionListener(e -> checkout());
+
         addProductButton.addActionListener(e -> addProduct());
         editProductButton.addActionListener(e -> editProduct());
         deleteProductButton.addActionListener(e -> deleteProduct());
@@ -357,8 +353,116 @@ public class POS extends JFrame {
         }
     }
 
-    public void updateInventoryTable(){
+    private void addToCart(JButton button){
+        int selectedRow = cartTable.getSelectedRow();
+        if(selectedRow == -1){
+            JOptionPane.showMessageDialog(this, "Please select a product to add to cart.", "Selection Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        //Get the product details from selected row
+        String name = (String) inventoryTableModel.getValueAt(selectedRow, 0);
+        double price = (double) inventoryTableModel.getValueAt(selectedRow, 1);
+        int stocks = (int) inventoryTableModel.getValueAt(selectedRow, 2);
 
+        //Prompt user for quantity
+        String quantityStr = JOptionPane.showInputDialog(this, "Enter the quantity: ");
+        if(quantityStr ==  null ||  quantityStr.isEmpty()){
+            return; //User cancelled or entered an empty input
+        }
+        try{
+            int quantity = Integer.parseInt(quantityStr);
+            if(quantity <= 0){
+                JOptionPane.showMessageDialog(this, "Quantity must be greater than zero.", "Input Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if(quantity > stocks){
+                JOptionPane.showMessageDialog(this, "Insufficient stock available", "Stock Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            Product inventoryProduct = inventory.get(selectedRow);
+            inventoryProduct.setStock(inventoryProduct.getStock() -  quantity);
+
+            //Check if the product is already in the cart
+            boolean productAlreadyExist = false;
+            for(Product cartProduct : cart){
+                if(cartProduct.getName().equals(name)){
+                    cartProduct.setStock(cartProduct.getStock() + quantity);
+                    productAlreadyExist = true;
+                    break;
+                }
+            }
+            //Add product into the cart
+            if(!productAlreadyExist){
+                cart.add(new Product(name, price, stocks));
+            }
+            //Refresh the UI
+            updateCartTable();
+            updateInventoryTable();
+            JOptionPane.showMessageDialog(this, "Product successfully added to cart");
+        }catch (NumberFormatException e){
+            JOptionPane.showMessageDialog(this, "Invalid input of quantity. Please enter a number", "Input Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void checkout(){
+        if(cart.isEmpty()){
+            JOptionPane.showMessageDialog(this, "Cart is empty. Add products before checkout.", "Checkout error.",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        //Calculate total and generate receipt
+        double total = 0;
+        StringBuilder receiptBuilder = new StringBuilder();
+        DecimalFormat df = new DecimalFormat("#.##");
+
+        receiptBuilder.append("Receipt:\n\n");
+        receiptBuilder.append(String.format("%-20s %-10s %-10s\n", "Name", "Price", "Quantity"));
+        System.out.println("---------------------------------------------------------\n");
+
+        //Calculate total and inventory after confirming purchase
+        for(Product cartProduct : cart){
+            double lineTotal = cartProduct.getPrice() * cartProduct.getStock();
+            receiptBuilder.append(String.format("%-20s %-10s %-10s\n",
+                    cartProduct.getName(),
+                    df.format(cartProduct.getPrice()),
+                    cartProduct.getStock(),
+                    df.format(lineTotal)));
+            total += lineTotal;
+
+            for(Product inventoryProduct : inventory){
+                if(inventoryProduct.getName().equals(cartProduct.getName())){
+                    inventoryProduct.setStock(inventoryProduct.getStock() - cartProduct.getStock());
+                    productDAO.updateProduct(inventoryProduct);
+                }
+            }
+        }
+        receiptBuilder.append("-------------------------------------------------\n");
+        receiptBuilder.append(String.format("Total: $%s\n", df.format(total)));
+
+        //Display the receipt to text area
+        receiptTextArea.setText(receiptBuilder.toString());
+        JOptionPane.showMessageDialog(this, "Checkout successfully completed.", "Checkout", JOptionPane.INFORMATION_MESSAGE);
+
+        //Update inventory table
+        cart.clear();
+        updateCartTable();
+        loadInventoryData();
+    }
+
+    private void updateCartTable(){
+        cartTableModel.setRowCount(0); //Clear the existing cart table
+
+        //Populate cart data into table
+        for(Product product : cart){
+            Object[] rowData = {product.getName(), product.getPrice(), product.getStock()};
+            cartTableModel.addRow(rowData);
+        }
+
+    }
+
+    public void updateInventoryTable(){
         inventoryTableModel.setRowCount(0);
         for (Product product : inventory){
             Object[] rowData = {product.getName(), product.getPrice(), product.getStock()};
@@ -367,6 +471,16 @@ public class POS extends JFrame {
     }
 
     public void loadInventoryData(){
+        inventory.clear(); //Clear the existing data
+        try{
+            //Fetch the inventory from the database using productDAO
+            inventory = productDAO.loadData();
+
+            //Update the inventory table with the latest data
+            updateInventoryTable();
+        }catch (Exception e){
+            JOptionPane.showMessageDialog(this, "Error loading inventory data.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }
 
