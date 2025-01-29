@@ -75,7 +75,7 @@ public class POS extends JFrame {
 
     public POS(){
         productDAO = new ProductDAO();
-        inventory = new ArrayList<>(productDAO.loadData());
+        inventory = new ArrayList<>(productDAO.loadInventoryData());
         cart = new ArrayList<>();
         inventoryTableModel = new DefaultTableModel();
         cartTableModel = new DefaultTableModel(){
@@ -92,7 +92,7 @@ public class POS extends JFrame {
         initializeUI();
 
         //Load the inventory
-        loadInventoryData();
+        loadInventory();
 
         setVisible(true);
     }
@@ -170,9 +170,9 @@ public class POS extends JFrame {
 
         //Create a panel for buttons Flowlayout (Horizontal Layout)
         JPanel inventoryButtonPanel = new JPanel();
-        inventoryButtonPanel.add(checkoutButton);
-        inventoryButtonPanel.add(editItemButton);
-        inventoryButtonPanel.add(deleteItemButton);
+        inventoryButtonPanel.add(addProductButton);
+        inventoryButtonPanel.add(editProductButton);
+        inventoryButtonPanel.add(deleteProductButton);
 
         inventoryPanel.add(inventoryButtonPanel, BorderLayout.SOUTH);
         cartPanel.add(cartScrollPane, BorderLayout.CENTER);
@@ -182,17 +182,23 @@ public class POS extends JFrame {
         //Add an action listener
         deleteItemButton.addActionListener(e -> deleteCartItem());
         editItemButton.addActionListener(e -> editCart());
-        checkoutButton.addActionListener(e -> checkout());
+        checkoutButton.addActionListener(e -> {
+            try {
+                checkout();
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        });
 
         addProductButton.addActionListener(e -> addProduct());
         editProductButton.addActionListener(e -> editProduct());
         deleteProductButton.addActionListener(e -> deleteProduct());
 
         //Load inventory
-        loadInventoryData();
+        loadInventory();
 
         if(inventory.isEmpty()){
-            loadInventoryData();
+            loadInventory();
         }
     }
 
@@ -215,14 +221,16 @@ public class POS extends JFrame {
                 Product product = new Product(name, price, stock);
                 if(productDAO.addProduct(product)){
                     inventory.add(product);
-                    loadInventoryData();
+                    loadInventory();
                     updateInventoryTable();
                 }else{
-                    JOptionPane.showMessageDialog(this, "Failed to add product in the database.", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Failed to add product in the database.",
+                            "Error", JOptionPane.ERROR_MESSAGE);
                 }
                 JOptionPane.showMessageDialog(this, "Product successfully added!");
             }catch(NumberFormatException e){
-                JOptionPane.showMessageDialog(this, "Invalid input. Please enter the valid value", "Input Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Invalid input. Please enter the valid value",
+                        "Input Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -230,7 +238,8 @@ public class POS extends JFrame {
     private void editProduct(){
         int selectedRow = inventoryTable.getSelectedRow();
         if(selectedRow == -1){
-            JOptionPane.showMessageDialog(this, "Please select a product to edit.", "Selection Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Please select a product to edit.",
+                    "Selection Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         Product selectedproduct = inventory.get(selectedRow);
@@ -252,13 +261,14 @@ public class POS extends JFrame {
 
                 if(productDAO.updateProduct(selectedproduct)){
                     updateInventoryTable();
-                    loadInventoryData();
+                    loadInventory();
                     JOptionPane.showMessageDialog(this, "Product successfully updated.");
                 }else{
                     JOptionPane.showMessageDialog(this, "Failed to update product.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
-            }catch (NumberFormatException e){
-                JOptionPane.showMessageDialog(this, "Invalid input. Please enter the valid values", "Input Error", JOptionPane.ERROR_MESSAGE);
+            }catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this, "Invalid input. Please enter the valid values",
+                        "Input Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -309,7 +319,8 @@ public class POS extends JFrame {
             JOptionPane.showMessageDialog(this, "Product deleted from the cart successfully",
                     "Delete Item", JOptionPane.INFORMATION_MESSAGE);
         }else {
-            JOptionPane.showMessageDialog(this, "Product not found in the cart", "Deleted Item.", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Product not found in the cart", "Deleted Item.",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -321,7 +332,8 @@ public class POS extends JFrame {
         }
         //Get the current value from the cart table
         String name = (String) cartTableModel.getValueAt(selectedRow, 0);
-        int currentQuantity = (int) cartTableModel.getValueAt(selectedRow, 1);
+        double price = (double) cartTableModel.getValueAt(selectedRow, 1);
+        int currentQuantity = (int) cartTableModel.getValueAt(selectedRow, 2);
 
         //Prompt user for quantity
         String newQuantityStr = JOptionPane.showInputDialog(this, "Enter the quantity: ", currentQuantity);
@@ -349,12 +361,13 @@ public class POS extends JFrame {
             //Update cart table with new quantity
             cartTableModel.setValueAt(newQuantity, selectedRow, 2);
         }catch (NumberFormatException e){
-            JOptionPane.showMessageDialog(this, "Invalid input of quantity. Please enter a number: ", "Input Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Invalid input of quantity. Please enter a number: ",
+                    "Input Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void addToCart(JButton button){
-        int selectedRow = cartTable.getSelectedRow();
+        int selectedRow = inventoryTable.getSelectedRow();
         if(selectedRow == -1){
             JOptionPane.showMessageDialog(this, "Please select a product to add to cart.", "Selection Error",
                     JOptionPane.ERROR_MESSAGE);
@@ -373,11 +386,13 @@ public class POS extends JFrame {
         try{
             int quantity = Integer.parseInt(quantityStr);
             if(quantity <= 0){
-                JOptionPane.showMessageDialog(this, "Quantity must be greater than zero.", "Input Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Quantity must be greater than zero.",
+                        "Input Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
             if(quantity > stocks){
-                JOptionPane.showMessageDialog(this, "Insufficient stock available", "Stock Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Insufficient stock available",
+                        "Stock Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
@@ -395,7 +410,7 @@ public class POS extends JFrame {
             }
             //Add product into the cart
             if(!productAlreadyExist){
-                cart.add(new Product(name, price, stocks));
+                cart.add(new Product(name, price, quantity));
             }
             //Refresh the UI
             updateCartTable();
@@ -406,10 +421,10 @@ public class POS extends JFrame {
         }
     }
 
-    private void checkout(){
+    private void checkout() {
         if(cart.isEmpty()){
-            JOptionPane.showMessageDialog(this, "Cart is empty. Add products before checkout.", "Checkout error.",
-                    JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Cart is empty. Add products before checkout.",
+                    "Checkout error.", JOptionPane.ERROR_MESSAGE);
             return;
         }
         //Calculate total and generate receipt
@@ -443,12 +458,14 @@ public class POS extends JFrame {
 
         //Display the receipt to text area
         receiptTextArea.setText(receiptBuilder.toString());
-        JOptionPane.showMessageDialog(this, "Checkout successfully completed.", "Checkout", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(this, "Checkout successfully completed.",
+                "Checkout", JOptionPane.INFORMATION_MESSAGE);
 
         //Update inventory table
         cart.clear();
+        //updateInventoryTable();
         updateCartTable();
-        loadInventoryData();
+        loadInventory();
     }
 
     private void updateCartTable(){
@@ -461,7 +478,6 @@ public class POS extends JFrame {
         }
 
     }
-
     public void updateInventoryTable(){
         inventoryTableModel.setRowCount(0);
         for (Product product : inventory){
@@ -470,17 +486,21 @@ public class POS extends JFrame {
         }
     }
 
-    public void loadInventoryData(){
+    private void loadInventory(){
         inventory.clear(); //Clear the existing data
         try{
             //Fetch the inventory from the database using productDAO
-            inventory = productDAO.loadData();
+            inventory = productDAO.loadInventoryData();
 
             //Update the inventory table with the latest data
             updateInventoryTable();
         }catch (Exception e){
             JOptionPane.showMessageDialog(this, "Error loading inventory data.", "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    public static void main(String[] arg){
+        SwingUtilities.invokeLater(POS::new);
     }
 }
 

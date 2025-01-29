@@ -1,6 +1,7 @@
 package com.pos.app;
 
 public class Product {
+    private int id;
     private String name;
     private double price;
     private int stock;
@@ -11,6 +12,9 @@ public class Product {
         this.stock = stock;
     }
 
+    public int getId(){
+        return id;
+    }
     public String getName() {
         return name;
     }

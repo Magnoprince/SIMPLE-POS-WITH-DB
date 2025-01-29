@@ -30,19 +30,20 @@ public class ProductDAO extends DbConnection{
     }
 
     public boolean updateProduct(Product product){
-        String query = "UPDATE inventory SET  price = ?, stock = ? WHERE product_name";
+        String query = "UPDATE inventory SET price = ?, stock = ? WHERE product_name = ?";
         try{
             connectToDatabase();
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setString(1, product.getName());
             preparedStatement.setDouble(2, product.getPrice());
             preparedStatement.setInt(3, product.getStock());
-            preparedStatement.executeUpdate();
+            int rowsAffected =  preparedStatement.executeUpdate();
+            return rowsAffected > 0;
         }catch (SQLException e){
             JOptionPane.showMessageDialog(this, "Error updating product!", "Error",
                     JOptionPane.ERROR_MESSAGE);
+            return false;
         }
-        return false;
     }
 
     public boolean deleteProduct(Product product){
@@ -59,7 +60,7 @@ public class ProductDAO extends DbConnection{
         return false;
     }
 
-    public List<Product> loadData() {
+    public List<Product> loadInventoryData() {
         String query = "SELECT * FROM inventory";
         try {
             connectToDatabase();
