@@ -34,9 +34,9 @@ public class ProductDAO extends DbConnection{
         try{
             connectToDatabase();
             PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, product.getName());
-            preparedStatement.setDouble(2, product.getPrice());
-            preparedStatement.setInt(3, product.getStock());
+            preparedStatement.setDouble(1, product.getPrice());
+            preparedStatement.setInt(2, product.getStock());
+            preparedStatement.setString(3, product.getName());
             int rowsAffected =  preparedStatement.executeUpdate();
             return rowsAffected > 0;
         }catch (SQLException e){

@@ -10,11 +10,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class POS extends JFrame {
-    private ProductDAO productDAO;
+    private final ProductDAO productDAO;
     private List<Product> inventory;
-    private List<Product> cart;
-    private DefaultTableModel inventoryTableModel;
-    private DefaultTableModel cartTableModel;
+    private final List<Product> cart;
+    private final DefaultTableModel inventoryTableModel;
+    private final DefaultTableModel cartTableModel;
 
     private JTable inventoryTable;
     private JTable cartTable;
@@ -185,7 +185,7 @@ public class POS extends JFrame {
         checkoutButton.addActionListener(e -> {
             try {
                 checkout();
-            } catch (Exception ex) {
+            } catch (SQLException ex) {
                 throw new RuntimeException(ex);
             }
         });
@@ -421,7 +421,7 @@ public class POS extends JFrame {
         }
     }
 
-    private void checkout() {
+    private void checkout() throws SQLException{
         if(cart.isEmpty()){
             JOptionPane.showMessageDialog(this, "Cart is empty. Add products before checkout.",
                     "Checkout error.", JOptionPane.ERROR_MESSAGE);
@@ -463,7 +463,6 @@ public class POS extends JFrame {
 
         //Update inventory table
         cart.clear();
-        //updateInventoryTable();
         updateCartTable();
         loadInventory();
     }
